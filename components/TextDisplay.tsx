@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Timer from "./Timer";
 import { generateWords, getCursorLineIndex, getLineCount } from "@/utils/generate";
 import { removeFirstLine } from "@/helper/removeWordsLine";
-import { addOneLineOfWords, getLastLineWordCount } from "@/helper/addWords";
+import { addOneLineOfWords, adjustLinesToTarget, getLastLineWordCount } from "@/helper/addWords";
 import Loader from "./Loader";
 import { LuCircleDot } from "react-icons/lu";
 
 export default function TextDisplay() {
-    const [words, setWords] = useState<string[]>(() => generateWords(5));
+    const [words, setWords] = useState<string[]>(() => generateWords(30));
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [activeWordIndex, setActiveWordIndex] = useState<number>(0);
     const [activeCharIndex, setActiveCharIndex] = useState<number>(0);
@@ -23,26 +23,48 @@ export default function TextDisplay() {
     const [loading, setLoading] = useState(true);
 
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-        const TARGET_LINES = 4;
-        const fillLines = () => {
-            const lines = getLineCount(containerRef);
+    // useEffect(() => {
+    //     let timer: number;
 
-            if (lines <= TARGET_LINES) {
-                const word = generateWords(1)[0];
-                setWords(prev => [...prev, word]);
-                requestAnimationFrame(fillLines);
-            }
-            if (lines > TARGET_LINES) {
-                const overflowCount = getLastLineWordCount(containerRef);
+    //     const onResize = () => {
+    //         clearTimeout(timer);
 
-                setWords(prev => prev.slice(0, -overflowCount));
-            }
-        };
+    //         timer = window.setTimeout(() => {
+    //             requestAnimationFrame(() => {
+    //                 adjustLinesToTarget(4, containerRef, setWords, setActiveWordIndex);
+    //             });
+    //         }, 150); // debounce
+    //     };
 
-        fillLines();
-    }, []);
+    //     window.addEventListener("resize", onResize);
+
+    //     return () => {
+    //         window.removeEventListener("resize", onResize);
+    //         clearTimeout(timer);
+    //     };
+    // }, []);
+
+
+    // useEffect(() => {
+    //     if (!containerRef.current) return;
+    //     const TARGET_LINES = 4;
+    //     const fillLines = () => {
+    //         const lines = getLineCount(containerRef);
+
+    //         if (lines <= TARGET_LINES) {
+    //             const word = generateWords(1)[0];
+    //             setWords(prev => [...prev, word]);
+    //             requestAnimationFrame(fillLines);
+    //         }
+    //         if (lines > TARGET_LINES) {
+    //             const overflowCount = getLastLineWordCount(containerRef);
+
+    //             setWords(prev => prev.slice(0, -overflowCount));
+    //         }
+    //     };
+
+    //     fillLines();
+    // }, []);
 
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -244,7 +266,7 @@ export default function TextDisplay() {
 
                     <div
                         ref={cursorRef}
-                        className={`cursor absolute h-10 w-0.75 bg-orange-400 top-1.25 left-0 ${!isTyping ? "animate-blink" : ""}`}
+                        className={`cursor absolute max-sm:h-7 h-10 w-0.75 bg-orange-400 top-1.25 left-0 ${!isTyping ? "animate-blink" : ""}`}
                     />
                 </div>
             </div>
