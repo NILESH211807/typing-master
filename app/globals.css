@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: #222227;
+    color: #FFFFFF;
+    font-family: var(--font-inter);
 }
+
+.words {
+    font-family: var(--font-roboto-mono);
+}
+
+.animate-blink {
+    animation: cursor 1s infinite;
+}
+
+.font1{
+    font-family: var(--font-inter);
+}
+
+@keyframes cursor {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+.cursor {
+    transition: transform 0.15s ease-out;
+    pointer-events: none;
+}
+
+.caret-end {
+    display: inline-block;
+}
+
+.incorrect-animate {
+    animation: incorrectZigzag 0.4s ease-out forwards;
+    animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+    position: absolute;
+    pointer-events: none;
+    transform: translate(var(--x), var(--y));
+}
+
+
+@keyframes incorrectZigzag {
+    0% {
+        transform: translate(var(--x),
+                var(--y)) translate(0, 0);
+        opacity: 1;
+    }
+
+    20% {
+        transform: translate(var(--x),
+                var(--y)) translate(-6px, 2px);
+    }
+
+    40% {
+        transform: translate(var(--x),
+                var(--y)) translate(6px, 6px);
+    }
+
+    60% {
+        transform: translate(var(--x),
+                var(--y)) translate(-4px, 12px);
+    }
+
+    80% {
+        transform: translate(var(--x),
+                var(--y)) translate(4px, 18px);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: translate(var(--x),
+                var(--y)) translate(0, 26px);
+        opacity: 0;
+    }
+}
+
+
+/* @keyframes incorrectZigzag {
+    0% {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+
+    20% {
+        transform: translate(-6px, 2px);
+    }
+
+    40% {
+        transform: translate(6px, 6px);
+    }
+
+    60% {
+        transform: translate(-4px, 12px);
+    }
+
+    80% {
+        transform: translate(4px, 18px);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: translate(0, 26px);
+        opacity: 0;
+    }
+} */
