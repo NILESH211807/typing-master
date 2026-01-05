@@ -7,6 +7,8 @@ import { removeFirstLine } from "@/helper/removeWordsLine";
 import { addOneLineOfWords, adjustLinesToTarget, getLastLineWordCount } from "@/helper/addWords";
 import Loader from "./Loader";
 import { LuCircleDot } from "react-icons/lu";
+import { useTyping } from "@/provider/TypingProvider";
+import StatsPanel from "./StatsPanel";
 
 export default function TextDisplay() {
     const [words, setWords] = useState<string[]>(() => generateWords(30));
@@ -21,51 +23,7 @@ export default function TextDisplay() {
     const [wrongKeyCount, setWrongKeyCount] = useState(0);
     const lineLockRef = useRef(false);
     const [loading, setLoading] = useState(true);
-
-
-    // useEffect(() => {
-    //     let timer: number;
-
-    //     const onResize = () => {
-    //         clearTimeout(timer);
-
-    //         timer = window.setTimeout(() => {
-    //             requestAnimationFrame(() => {
-    //                 adjustLinesToTarget(4, containerRef, setWords, setActiveWordIndex);
-    //             });
-    //         }, 150); // debounce
-    //     };
-
-    //     window.addEventListener("resize", onResize);
-
-    //     return () => {
-    //         window.removeEventListener("resize", onResize);
-    //         clearTimeout(timer);
-    //     };
-    // }, []);
-
-
-    // useEffect(() => {
-    //     if (!containerRef.current) return;
-    //     const TARGET_LINES = 4;
-    //     const fillLines = () => {
-    //         const lines = getLineCount(containerRef);
-
-    //         if (lines <= TARGET_LINES) {
-    //             const word = generateWords(1)[0];
-    //             setWords(prev => [...prev, word]);
-    //             requestAnimationFrame(fillLines);
-    //         }
-    //         if (lines > TARGET_LINES) {
-    //             const overflowCount = getLastLineWordCount(containerRef);
-
-    //             setWords(prev => prev.slice(0, -overflowCount));
-    //         }
-    //     };
-
-    //     fillLines();
-    // }, []);
-
+    const { initialSetting } = useTyping();
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         event.preventDefault();
@@ -75,7 +33,7 @@ export default function TextDisplay() {
         // block extra keys 
         if (key.length > 1 && key !== "Backspace") return;
 
-        // setIsTyping(true);
+        setIsTyping(true);
 
         // add more words 
         if (key === " ") {
@@ -201,7 +159,6 @@ export default function TextDisplay() {
     }, [loading])
 
     return (
-
         <>
             {
                 loading && (
@@ -210,64 +167,68 @@ export default function TextDisplay() {
                     </div>
                 )
             }
-            <div className="words max-[650]:px-4 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
-                <div className="w-full flex items-center justify-between mb-5">
-                    <div className="flex text-3xl max-[650px]:text-[25px] items-center justify-center gap-3">
-                        <span className=" text-orange-400">
-                            <LuCircleDot />
-                        </span>
-                        <h3 className=" text-orange-400">{activeWordIndex}</h3>
-                    </div>
-                    <Timer isTyping={isTyping} />
-                </div>
-                <div
-                    ref={containerRef}
-                    className="w-full text-[33px] max-[650px]:text-[25px] mt-5 select-none inline-flex flex-wrap relative"
-                >
-                    {words.map((word, index) => (
-                        <div
-                            key={`${word}-${index}`}
-                            className="word inline-flex my-0.75"
-                        >
-                            {word.split("").map((char, charIndex) => (
-                                <span
-                                    key={`${index}-${charIndex}`}
-                                    data-word={index}
-                                    data-char={charIndex}
-                                    className={`char ${activeWordIndex > index ||
-                                        (activeWordIndex === index && activeCharIndex > charIndex)
-                                        ? "text-[#dbdbdb]"
-                                        : "text-[#626268]"
-                                        }`}
-                                >
-                                    {char}
-                                </span>
-                            ))}
-                            <span
-                                data-word={index}
-                                data-char={word.length}
-                                className="char caret-end"
-                            >
-                                &nbsp;
+
+            <div className="container mx-auto mt-28 select-none">
+                <div className="words max-[650]:px-4 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
+                    <div className="w-full flex items-center justify-between mb-5">
+                        <div className="flex text-3xl max-[650px]:text-[25px] items-center justify-center gap-3">
+                            <span className=" text-orange-400">
+                                <LuCircleDot />
                             </span>
+                            <h3 className=" text-orange-400">{activeWordIndex}</h3>
                         </div>
-                    ))}
 
-                    {
-                        isIncorrect && (
-                            <span
-                                ref={incorrectRef}
-                                key={`${activeWordIndex}-${activeCharIndex}-${wrongKeyCount}`}
-                                className="absolute text-3xl top-5 text-red-600 incorrect-animate">
-                                {inputChar}
-                            </span>
-                        )
-                    }
-
+                        {initialSetting.mode === "time" && (<Timer isTyping={isTyping} />)}
+                    </div>
                     <div
-                        ref={cursorRef}
-                        className={`cursor absolute max-sm:h-7 h-10 w-0.75 bg-orange-400 top-1.25 left-0 ${!isTyping ? "animate-blink" : ""}`}
-                    />
+                        ref={containerRef}
+                        className="w-full text-[33px] max-[650px]:text-[25px] mt-5 select-none inline-flex flex-wrap relative"
+                    >
+                        {words.map((word, index) => (
+                            <div
+                                key={`${word}-${index}`}
+                                className="word inline-flex my-0.75"
+                            >
+                                {word.split("").map((char, charIndex) => (
+                                    <span
+                                        key={`${index}-${charIndex}`}
+                                        data-word={index}
+                                        data-char={charIndex}
+                                        className={`char ${activeWordIndex > index ||
+                                            (activeWordIndex === index && activeCharIndex > charIndex)
+                                            ? "text-[#dbdbdb]"
+                                            : "text-[#626268]"
+                                            }`}
+                                    >
+                                        {char}
+                                    </span>
+                                ))}
+                                <span
+                                    data-word={index}
+                                    data-char={word.length}
+                                    className="char caret-end"
+                                >
+                                    &nbsp;
+                                </span>
+                            </div>
+                        ))}
+
+                        {
+                            isIncorrect && (
+                                <span
+                                    ref={incorrectRef}
+                                    key={`${activeWordIndex}-${activeCharIndex}-${wrongKeyCount}`}
+                                    className="absolute text-3xl top-5 text-red-600 incorrect-animate">
+                                    {inputChar}
+                                </span>
+                            )
+                        }
+
+                        <div
+                            ref={cursorRef}
+                            className={`cursor absolute max-sm:h-7 h-10 w-0.75 bg-orange-400 top-1.25 left-0 ${!isTyping ? "animate-blink" : ""}`}
+                        />
+                    </div>
                 </div>
             </div>
         </>
