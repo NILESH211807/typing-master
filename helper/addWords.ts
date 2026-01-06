@@ -1,4 +1,5 @@
-import { generateWords } from "@/utils/generate";
+import { generateWords, getCursorLineIndex, getLineCount } from "@/utils/generate";
+import { removeFirstLine } from "./removeWordsLine";
 
 export function getLastLineWordCount(containerRef: React.RefObject<HTMLDivElement | null>) {
     if (!containerRef.current) return 0;
@@ -69,130 +70,38 @@ export const getLineTops = (containerRef: React.RefObject<HTMLDivElement | null>
     return tops;
 };
 
-export const removeFirstLine = (containerRef: React.RefObject<HTMLDivElement | null>,
-    setWords: React.Dispatch<React.SetStateAction<string[]>>,
-    setActiveWordIndex: React.Dispatch<React.SetStateAction<number>>) => {
-    if (!containerRef.current) return 0;
-
-    const words = Array.from(
-        containerRef.current.querySelectorAll(".word")
-    ) as HTMLElement[];
-
-    if (!words.length) return 0;
-
-    const firstTop = words[0].offsetTop;
-    let count = 0;
-
-    for (const w of words) {
-        if (w.offsetTop === firstTop) count++;
-        else break;
-    }
-
-    if (count > 0) {
-        setWords(prev => prev.slice(count));
-        setActiveWordIndex(prev => Math.max(prev - count, 0));
-    }
-
-    return count;
-};
-
-const addOneFullLine = (containerRef: React.RefObject<HTMLDivElement | null>,
-    setWords: React.Dispatch<React.SetStateAction<string[]>>
-) => {
-    if (!containerRef.current) return;
-
-    const words = Array.from(
-        containerRef.current.querySelectorAll(".word")
-    ) as HTMLElement[];
-
-    const lastTop =
-        words.length > 0 ? words[words.length - 1].offsetTop : null;
-
-    const addNext = () => {
-        const word = generateWords(1)[0];
-        setWords(prev => [...prev, word]);
-
-        requestAnimationFrame(() => {
-            const updated = Array.from(
-                containerRef.current!.querySelectorAll(".word")
-            ) as HTMLElement[];
-
-            const newTop =
-                updated[updated.length - 1].offsetTop;
-
-            // keep adding while still same line
-            if (lastTop !== null && newTop === lastTop) {
-                addNext();
-            }
-        });
-    };
-
-    addNext();
-};
-
-export const adjustLinesToTarget = (targetLines = 4,
+export function addMoreWords(char: string,
     containerRef: React.RefObject<HTMLDivElement | null>,
+    activeWordIndex: number,
+    lineLockRef: React.RefObject<boolean>,
     setWords: React.Dispatch<React.SetStateAction<string[]>>,
-    setActiveWordIndex: React.Dispatch<React.SetStateAction<number>>
-) => {
-    if (!containerRef.current) return;
+    setActiveWordIndex: React.Dispatch<React.SetStateAction<number>>) {
 
-    const adjust = () => {
-        const lineTops = getLineTops(containerRef);
-        const lineCount = lineTops.length;
+    if (char !== " ") return;
 
-        if (lineCount > targetLines) {
-            removeFirstLine(containerRef, setWords, setActiveWordIndex);
-            requestAnimationFrame(adjust);
-            return;
+    requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const cursorLine = getCursorLineIndex(activeWordIndex, containerRef);
+        const totalLines = getLineCount(containerRef);
+
+        if (!cursorLine) return;
+
+        const remLines = totalLines - cursorLine;
+
+        if (remLines <= 1 && !lineLockRef.current) {
+            const removeCount = removeFirstLine(containerRef);
+
+            if (removeCount && removeCount > 0) {
+                setWords(prev => prev.slice(removeCount));
+                setActiveWordIndex(prev => Math.max(prev - removeCount, 0));
+            }
+
+            lineLockRef.current = true;
+
+            requestAnimationFrame(() => {
+                addOneLineOfWords(containerRef, setWords);
+                lineLockRef.current = false;
+            });
         }
-
-        if (lineCount < targetLines) {
-            addOneFullLine(containerRef, setWords);
-            requestAnimationFrame(adjust);
-            return;
-        }
-    };
-
-    adjust();
-};
-
-
-
-
-
-
-// export const addOneLineOfWords = (
-//     containerRef: React.RefObject<HTMLDivElement | null>,
-//     setWords: React.Dispatch<React.SetStateAction<string[]>>
-// ) => {
-//     if (!containerRef.current) return;
-
-//     const getLastLineTop = () => {
-//         const els = Array.from(
-//             containerRef.current!.querySelectorAll(".word")
-//         ) as HTMLElement[];
-
-//         return els.length ? els[els.length - 1].offsetTop : 0;
-//     };
-
-//     const startTop = getLastLineTop();
-
-//     const tryAdd = () => {
-//         const newWord = generateWords(1)[0];
-
-//         setWords(prev => [...prev, newWord]);
-
-//         requestAnimationFrame(() => {
-//             const newTop = getLastLineTop();
-
-//             if (newTop === startTop) {
-//                 // still same line → keep adding
-//                 tryAdd();
-//             }
-//         });
-//     };
-
-//     tryAdd();
-// };
-
+    })
+}

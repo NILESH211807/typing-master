@@ -1,10 +1,10 @@
 "use client";
-import React, { Activity, useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { useEffect, useState } from "react";
 import Timer from "./Timer";
 import { generateWords, getCursorLineIndex, getLineCount } from "@/utils/generate";
 import { removeFirstLine } from "@/helper/removeWordsLine";
-import { addOneLineOfWords } from "@/helper/addWords";
+import { addMoreWords, addOneLineOfWords } from "@/helper/addWords";
 import Loader from "./Loader";
 import { LuCircleDot } from "react-icons/lu";
 import { useTyping } from "@/provider/TypingProvider";
@@ -42,7 +42,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     const { initialSetting, defaultResult } = useTyping();
     const [resultData, setResultData] = useState<ResultDataType>(defaultResult);
     const [showResult, setShowResult] = useState(false);
-
+    const inputRef = useRef<HTMLInputElement>(null);
     const [timerResetKey, setTimerResetKey] = useState(0);
 
     // reset
@@ -60,21 +60,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         setTimerResetKey(prev => prev + 1);
         setWordCount(0);
         setShowResult(false);
-    }
-
-    useEffect(() => {
-
-        if (initialSetting.mode === "words") {
-            if (wordCount === initialSetting.wordCount) {
-                setResultData(prev => ({
-                    ...prev,
-                    endTime: Date.now(),
-                }))
-                setShowResult(true);
-            }
-        }
-
-    }, [activeWordIndex, initialSetting.wordCount, initialSetting.mode, wordCount])
+    };
 
     const checkIsTypingRef = useRef(
         debounce(() => {
@@ -82,58 +68,38 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         }, 5000)
     );
 
+    // handle on click focus input
+    const handleOnClickFocusInput = useCallback(() => {
+        if (!inputRef.current) return;
+        inputRef.current.focus();
+    }, []);
+
     useEffect(() => {
+        if (!inputRef.current) return;
+        inputRef.current.focus();
+
         return () => {
             checkIsTypingRef.current.cancel();
         }
     }, []);
 
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        event.preventDefault();
-        if (!event.isTrusted) return;
-        if (showResult) return;
-        const key = event.key;
+    // process input typing
+    const processTyping = useCallback((char: string) => {
+        if (char.length > 1 && char !== "Backspace") return;
 
+        // type start timer
         setResultData(prev => ({
             ...prev,
             startTime: prev.startTime || Date.now(),
-        }))
-
-        // block extra keys 
-        if (key.length > 1 && key !== "Backspace") return;
+        }));
 
         setIsTyping(true);
         setHideStats(true);
         checkIsTypingRef.current();
 
-        // add more words 
-        if (key === " ") {
-            requestAnimationFrame(() => {
-                if (!containerRef.current) return;
-                const cursorLine = getCursorLineIndex(activeWordIndex, containerRef);
-                const totalLines = getLineCount(containerRef);
-
-                if (!cursorLine) return;
-
-                const remLines = totalLines - cursorLine;
-
-                if (remLines <= 1 && !lineLockRef.current) {
-                    const removeCount = removeFirstLine(containerRef);
-
-                    if (removeCount && removeCount > 0) {
-                        setWords(prev => prev.slice(removeCount));
-                        setActiveWordIndex(prev => Math.max(prev - removeCount, 0));
-                    }
-
-                    lineLockRef.current = true;
-
-                    requestAnimationFrame(() => {
-                        addOneLineOfWords(containerRef, setWords);
-                        lineLockRef.current = false;
-                    });
-                }
-
-            });
+        // add more words in last line
+        if (char === " ") {
+            addMoreWords(char, containerRef, activeWordIndex, lineLockRef, setWords, setActiveWordIndex)
         }
 
         // if rich end 
@@ -144,8 +110,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
 
         const currentWord = words[activeWordIndex];
 
-        if (key === " " && activeCharIndex === currentWord.length) {
-            event.preventDefault();
+        if (char === " " && activeCharIndex === currentWord.length) {
             setActiveWordIndex(prev => prev + 1);
             setWordCount(prev => prev + 1);
             setActiveCharIndex(0);
@@ -158,7 +123,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             return;
         }
 
-        if (key === "Backspace" && activeCharIndex > 0) {
+        if (char === "Backspace" && activeCharIndex > 0) {
             setActiveCharIndex(prev => prev - 1);
             setResultData(prev => ({
                 ...prev,
@@ -168,13 +133,11 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             return;
         }
 
-        if (key === "Backspace" && activeCharIndex === 0) return;
-
-        if (key === " ") return;
+        if (char === "Backspace" && activeCharIndex === 0) return;
+        if (char === " ") return;
 
         setActiveCharIndex(prev => {
-            const isCorrect = currentWord[prev] === key;
-
+            const isCorrect = currentWord[prev] === char;
             if (isCorrect) {
                 setIsIncorrect(false);
                 setWrongKeyCount(0);
@@ -191,92 +154,88 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             }));
             return isCorrect ? prev + 1 : prev;
         });
-        setInputChar(key);
-    }, [activeCharIndex, activeWordIndex, words, setHideStats, checkIsTypingRef, showResult]);
+        setInputChar(char);
 
-    useEffect(() => {
-        document.addEventListener("keydown", handleKeyDown);
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [handleKeyDown]);
+    }, [setHideStats, activeWordIndex, activeCharIndex, words]);
 
-    useEffect(() => {
-        const char = document.querySelector(
-            `.char[data-word="${activeWordIndex}"][data-char="${activeCharIndex}"]`
-        ) as HTMLElement;
+    // handle input change 
+    const handleInputChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const value = event.target.value;
+            if (!value || showResult) return;
 
-        if (!char || !cursorRef.current || !containerRef.current) return;
-
-        const charRect = char.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-
-        const x = charRect.left - containerRect.left;
-        const y = charRect.top - containerRect.top;
-
-        cursorRef.current.style.transform = `translate(${x}px, ${y}px)`;
-
-    }, [activeWordIndex, activeCharIndex]);
+            // get last character
+            const character = value[value.length - 1];
+            processTyping(character);
+            event.target.value = '';
+        }, [showResult, processTyping]);
 
 
-    useEffect(() => {
-        if (!isIncorrect || !incorrectRef.current) return;
+    // move cursor
+    useEffect(
+        () => {
+            const char = document.querySelector(
+                `.char[data-word="${activeWordIndex}"][data-char="${activeCharIndex}"]`
+            ) as HTMLElement;
 
-        const char = document.querySelector(
-            `.char[data-word="${activeWordIndex}"][data-char="${activeCharIndex}"]`
-        ) as HTMLElement;
+            if (!char || !cursorRef.current || !containerRef.current) return;
 
-        if (!char || !containerRef.current) return;
+            const charRect = char.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
 
-        const charRect = char.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
+            const x = charRect.left - containerRect.left;
+            const y = charRect.top - containerRect.top;
 
-        const x = charRect.left - containerRect.left;
-        const y = charRect.top - containerRect.top;
+            cursorRef.current.style.transform = `translate(${x}px, ${y}px)`;
 
-        incorrectRef.current.style.setProperty("--x", `${x}px`);
-        incorrectRef.current.style.setProperty("--y", `${y}px`);
-    }, [isIncorrect, wrongKeyCount, activeCharIndex, activeWordIndex]);
+        }, [activeWordIndex, activeCharIndex]);
 
-    // useEffect(() => {
-    //     const unlockAudio = () => {
-    //         initTypingSound();
-    //         window.removeEventListener("keydown", unlockAudio);
-    //     };
+    // handle incorrect typing
+    useEffect(
+        () => {
+            if (!isIncorrect || !incorrectRef.current) return;
 
-    //     window.addEventListener("keydown", unlockAudio);
+            const char = document.querySelector(
+                `.char[data-word="${activeWordIndex}"][data-char="${activeCharIndex}"]`
+            ) as HTMLElement;
 
-    //     return () => window.removeEventListener("keydown", unlockAudio);
-    // }, []);
+            if (!char || !containerRef.current) return;
 
-    // handle result 
-    useEffect(() => {
-        const t = setTimeout(() => {
-            setLoading(false);
-        }, 500);
+            const charRect = char.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
 
-        return () => {
-            clearTimeout(t);
-        };
-    }, [loading]);
+            const x = charRect.left - containerRect.left;
+            const y = charRect.top - containerRect.top;
+
+            incorrectRef.current.style.setProperty("--x", `${x}px`);
+            incorrectRef.current.style.setProperty("--y", `${y}px`);
+        }, [isIncorrect, wrongKeyCount, activeCharIndex, activeWordIndex]);
+
+    // useEffect(
+    //     () => {
+    //         const t = setTimeout(
+    //             () => {
+    //                 setLoading(false);
+    //             }, 500);
+
+    //         return () => {
+    //             clearTimeout(t);
+    //         };
+    //     }, [loading]);
 
     return (
         <>
-            {
-                loading && (
-                    <div className="fixed top-0 left-0 z-20 bg-[#222227] w-full h-screen flex items-center justify-center">
-                        <Loader />
-                    </div>
-                )
-            }
-
-            <Activity mode={`${showResult ? "visible" : "hidden"}`}>
+            {/* {loading && (
+                <div className="fixed top-0 left-0 z-20 bg-[#222227] w-full h-screen flex items-center justify-center">
+                    <Loader />
+                </div>
+            )} */}
+            {showResult && (
                 <ResultModal
                     resultData={resultData}
                     reset={reset}
-                />
-            </Activity>
-            <div className="container mx-auto mt-28 select-none">
+                />)}
+            <div onClick={handleOnClickFocusInput} className="container mx-auto mt-28 select-none">
                 <div className="words max-[650]:px-6 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
                     <div className="w-full flex items-center justify-between mb-5">
                         <div className="flex text-3xl max-[650px]:text-[25px] items-center justify-center gap-3">
@@ -287,7 +246,6 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                         </div>
 
                         {initialSetting.mode === "time" && (<Timer
-                            // key={initialSetting.duration}
                             duration={initialSetting.duration}
                             isTyping={isTyping}
                             setShowResult={setShowResult}
@@ -296,6 +254,18 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                             setHideStats={setHideStats}
                         />)}
                     </div>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        className="absolute opacity-0 pointer-events-none"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        inputMode="text"
+                        onChange={handleInputChange}
+                        onPaste={(e) => e.preventDefault()}
+                        onBlur={() => inputRef.current?.focus()}
+                    />
                     <div
                         ref={containerRef}
                         className="w-full text-[33px] max-[650px]:text-[22px] mt-5 select-none inline-flex flex-wrap relative"

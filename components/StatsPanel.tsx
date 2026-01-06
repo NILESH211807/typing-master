@@ -7,7 +7,13 @@ import { HiHashtag, HiOutlineMenuAlt3 } from "react-icons/hi";
 import { MdClose, MdOutlineSettings } from "react-icons/md";
 import { RiAlignLeft, RiMenu3Line, RiTimerLine } from "react-icons/ri";
 
-export default function StatsPanel({ hideStats }: { hideStats: boolean }) {
+export default function StatsPanel({
+    hideStats,
+    setRerenderKey
+}: {
+    hideStats: boolean,
+    setRerenderKey: React.Dispatch<React.SetStateAction<number>>
+}) {
 
     const [isOpenMenu, setIsOpenMenu] = useState(false);
     const { setInitialSetting, initialSetting } = useTyping();
@@ -27,6 +33,7 @@ export default function StatsPanel({ hideStats }: { hideStats: boolean }) {
     const saveSettings = () => {
         setInitialSetting(settings);
         setIsOpenMenu(false);
+        setRerenderKey((prev) => prev + 1);
     };
 
     return (
@@ -101,11 +108,10 @@ export default function StatsPanel({ hideStats }: { hideStats: boolean }) {
                     </div>
                 </div>
 
-                <div className="p-5 border-t absolute w-full bottom-0 border-[#1B1B1F] bg-[#1e1e22]">
+                <div className="p-5 border-t absolute w-full bottom-0 max-sm:bottom-10 border-[#1B1B1F] bg-[#1e1e22]">
                     <button
                         onClick={saveSettings}
-                        className="w-full py-3 text-sm bg-orange-400 hover:bg-orange-500 text-black font-bold rounded-full transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
-                    >
+                        className="w-full py-3 text-sm bg-orange-400 hover:bg-orange-500 text-black font-bold rounded-full transition-colors shadow-lg shadow-orange-500/20 cursor-pointer">
                         Start Test
                     </button>
                 </div>

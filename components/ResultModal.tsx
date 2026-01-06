@@ -13,9 +13,6 @@ type ResultModalProps = {
 export default function ResultModal({ resultData, reset }: ResultModalProps) {
     const data = calculateResult(resultData);
 
-    console.log(data);
-
-
     const closeModal = () => {
         reset();
     }
@@ -35,8 +32,8 @@ export default function ResultModal({ resultData, reset }: ResultModalProps) {
                     </span>
                 </div>
 
-                <div className="px-5 my-2 max-sm:px-2 max-h-screen overflow-auto">
-                    <div className="grid grid-cols-2 gap-3 my-5 max-sm:grid-cols-1">
+                <div className="px-5 my-2 max-sm:px-2 max-h-[80vh] overflow-auto">
+                    <div className="grid grid-cols-2 gap-3 my-5">
                         <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative max-sm:px-4">
                             <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">WPM (Words per minute)</p>
                             <h1 className="text-xl font-bold">{data.wpm}</h1>
@@ -66,7 +63,7 @@ export default function ResultModal({ resultData, reset }: ResultModalProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 my-5 max-sm:grid-cols-1">
+                    <div className="grid grid-cols-2 gap-3 my-5">
                         <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative max-sm:px-4">
                             <p className="text-[11px] text-green-600 uppercase font-semibold">Currect</p>
                             <h1 className="text-xl font-bold">{data.correctChars}</h1>
