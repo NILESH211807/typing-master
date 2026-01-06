@@ -277,7 +277,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                 />
             </Activity>
             <div className="container mx-auto mt-28 select-none">
-                <div className="words max-[650]:px-4 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
+                <div className="words max-[650]:px-6 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
                     <div className="w-full flex items-center justify-between mb-5">
                         <div className="flex text-3xl max-[650px]:text-[25px] items-center justify-center gap-3">
                             <span className=" text-orange-400">
@@ -298,7 +298,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                     </div>
                     <div
                         ref={containerRef}
-                        className="w-full text-[33px] max-[650px]:text-[25px] mt-5 select-none inline-flex flex-wrap relative"
+                        className="w-full text-[33px] max-[650px]:text-[22px] mt-5 select-none inline-flex flex-wrap relative"
                     >
                         {words.map((word, index) => (
                             <div

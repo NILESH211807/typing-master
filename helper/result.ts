@@ -47,8 +47,8 @@ export function secondsToTime(totalSeconds: number): string {
     if (hours > 0) {
         return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
             .toString()
-            .padStart(2, "0")}s`;
+            .padStart(2, "0")}`;
     }
 
-    return `${minutes}:${seconds.toString().padStart(2, "0")}s`;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
