@@ -27,8 +27,13 @@ const TypingContext = createContext<TypingContextType | undefined>(undefined);
 export const TypingProvider = ({ children }: { children: React.ReactNode }) => {
     const [initialSetting, setInitialSetting] = useState<DataType>(
         () => {
-            const stored = localStorage.getItem("initialSetting");
-            return stored ? JSON.parse(stored) : defaultData;
+            if (typeof window !== "undefined") {
+                const stored = localStorage.getItem("initialSetting");
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            }
+            return defaultData;
         }
     );
 
