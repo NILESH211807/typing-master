@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import Timer from "./Timer";
 import { generateWords, getCursorLineIndex, getLineCount } from "@/utils/generate";
 import { removeFirstLine } from "@/helper/removeWordsLine";
-import { addOneLineOfWords, adjustLinesToTarget, getLastLineWordCount } from "@/helper/addWords";
+import { addOneLineOfWords } from "@/helper/addWords";
 import Loader from "./Loader";
 import { LuCircleDot } from "react-icons/lu";
 import { useTyping } from "@/provider/TypingProvider";
-import StatsPanel from "./StatsPanel";
 import ResultModal from "./ResultModal";
 import { initTypingSound, playTypingSound } from "@/utils/sound";
 import debounce from "@/utils/dbounce";
@@ -31,6 +30,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [activeWordIndex, setActiveWordIndex] = useState<number>(0);
     const [activeCharIndex, setActiveCharIndex] = useState<number>(0);
+    const [wordCount, setWordCount] = useState<number>(0);
     const [inputChar, setInputChar] = useState<string>("");
     const cursorRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -39,13 +39,15 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     const [wrongKeyCount, setWrongKeyCount] = useState(0);
     const lineLockRef = useRef(false);
     const [loading, setLoading] = useState(true);
-    const { initialSetting, setInitialSetting, defaultResult } = useTyping();
+    const { initialSetting, defaultResult } = useTyping();
     const [resultData, setResultData] = useState<ResultDataType>(defaultResult);
     const [showResult, setShowResult] = useState(false);
 
-    // restart
+    const [timerResetKey, setTimerResetKey] = useState(0);
+
+    // reset
     const reset = (type = "next") => {
-        if (type === "restart") {
+        if (type === "next") {
             setWords(generateWords(30));
         }
         setActiveWordIndex(0);
@@ -55,8 +57,24 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         setIsIncorrect(false);
         setWrongKeyCount(0);
         setResultData(defaultResult);
+        setTimerResetKey(prev => prev + 1);
+        setWordCount(0);
         setShowResult(false);
     }
+
+    useEffect(() => {
+
+        if (initialSetting.mode === "words") {
+            if (wordCount === initialSetting.wordCount) {
+                setResultData(prev => ({
+                    ...prev,
+                    endTime: Date.now(),
+                }))
+                setShowResult(true);
+            }
+        }
+
+    }, [activeWordIndex, initialSetting.wordCount, initialSetting.mode, wordCount])
 
     const checkIsTypingRef = useRef(
         debounce(() => {
@@ -68,11 +86,12 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         return () => {
             checkIsTypingRef.current.cancel();
         }
-    }, [])
+    }, []);
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         event.preventDefault();
         if (!event.isTrusted) return;
+        if (showResult) return;
         const key = event.key;
 
         setResultData(prev => ({
@@ -128,6 +147,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         if (key === " " && activeCharIndex === currentWord.length) {
             event.preventDefault();
             setActiveWordIndex(prev => prev + 1);
+            setWordCount(prev => prev + 1);
             setActiveCharIndex(0);
             setResultData(prev => ({
                 ...prev,
@@ -172,7 +192,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             return isCorrect ? prev + 1 : prev;
         });
         setInputChar(key);
-    }, [activeCharIndex, activeWordIndex, words, setHideStats, checkIsTypingRef]);
+    }, [activeCharIndex, activeWordIndex, words, setHideStats, checkIsTypingRef, showResult]);
 
     useEffect(() => {
         document.addEventListener("keydown", handleKeyDown);
@@ -263,15 +283,17 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                             <span className=" text-orange-400">
                                 <LuCircleDot />
                             </span>
-                            <h3 className=" text-orange-400">{activeWordIndex}</h3>
+                            <h3 className=" text-orange-400">{initialSetting.mode === "words" ? `${wordCount}/${initialSetting.wordCount}` : wordCount}</h3>
                         </div>
 
                         {initialSetting.mode === "time" && (<Timer
-                            key={initialSetting.duration}
+                            // key={initialSetting.duration}
                             duration={initialSetting.duration}
                             isTyping={isTyping}
                             setShowResult={setShowResult}
                             setResultData={setResultData}
+                            timerResetKey={timerResetKey}
+                            setHideStats={setHideStats}
                         />)}
                     </div>
                     <div

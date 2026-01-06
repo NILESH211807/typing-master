@@ -18,14 +18,19 @@ type TypingContextType = {
 const defaultData: DataType = {
     duration: 120,
     mode: "time",
-    wordCount: 30,
+    wordCount: 50,
     sound: true,
 }
 
 const TypingContext = createContext<TypingContextType | undefined>(undefined);
 
 export const TypingProvider = ({ children }: { children: React.ReactNode }) => {
-    const [initialSetting, setInitialSetting] = useState<DataType>(defaultData);
+    const [initialSetting, setInitialSetting] = useState<DataType>(
+        () => {
+            const stored = localStorage.getItem("initialSetting");
+            return stored ? JSON.parse(stored) : defaultData;
+        }
+    );
 
     const defaultResult = {
         startTime: 0,
@@ -40,12 +45,12 @@ export const TypingProvider = ({ children }: { children: React.ReactNode }) => {
         },
     }
 
-    useEffect(() => {
-        const stored = localStorage.getItem("initialSetting");
-        if (stored) {
-            setInitialSetting(JSON.parse(stored));
-        }
-    }, []);
+    // useEffect(() => {
+    //     const stored = localStorage.getItem("initialSetting");
+    //     if (stored) {
+    //         setInitialSetting(JSON.parse(stored));
+    //     }
+    // }, []);
 
     // if any changes in the initialSetting, save it to local storage
     useEffect(() => {

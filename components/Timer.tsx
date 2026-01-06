@@ -10,13 +10,18 @@ type TimerProps = {
     duration: number,
     setShowResult: (value: boolean) => void,
     setResultData: React.Dispatch<React.SetStateAction<ResultDataType>>;
+    timerResetKey: number;
+    setHideStats: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function Timer({
     isTyping,
     duration,
     setShowResult,
-    setResultData }: TimerProps) {
+    setResultData,
+    timerResetKey,
+    setHideStats
+}: TimerProps) {
     const [time, setTime] = useState(duration);
     const { initialSetting } = useTyping();
 
@@ -28,6 +33,7 @@ export default function Timer({
                 endTime: Date.now(),
             }));
             setShowResult(true);
+            setHideStats(false);
             return;
         };
         const interval = setInterval(() => {
@@ -35,6 +41,10 @@ export default function Timer({
         }, 1000)
         return () => clearTimeout(interval);
     }, [time, isTyping, initialSetting.mode, setShowResult, setResultData]);
+
+    useEffect(() => {
+        setTime(duration);
+    }, [timerResetKey, duration]);
 
     return (
         <div className="text-orange-400 text-3xl max-[650px]:text-[25px] select-none flex items-center gap-3">

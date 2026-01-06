@@ -1,5 +1,5 @@
 import { IoMdClose } from "react-icons/io";
-import { calculateResult } from "@/helper/result";
+import { calculateResult, secondsToTime } from "@/helper/result";
 import { ResultDataType } from "./TextDisplay";
 
 type ResultModalProps = {
@@ -9,6 +9,9 @@ type ResultModalProps = {
 
 export default function ResultModal({ resultData, reset }: ResultModalProps) {
     const data = calculateResult(resultData);
+
+    console.log(data);
+
 
     const closeModal = () => {
         reset();
@@ -30,32 +33,47 @@ export default function ResultModal({ resultData, reset }: ResultModalProps) {
                 </div>
 
                 <div className="px-5 my-2">
-                    <div className="grid grid-cols-2 gap-3 my-5">
-                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-3 px-5 relative">
-                            <p className="text-[12px] text-[#6f6f79] uppercase font-bold">WPM</p>
-                            <h1 className="text-2xl font-bold">{data.wpm}</h1>
-                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-1 rounded-full"></div>
+                    <div className="grid grid-cols-3 gap-3 my-5">
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">WPM (Words per minute)</p>
+                            <h1 className="text-xl font-bold">{data.wpm}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
                         </div>
-                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-3 px-5 relative">
-                            <p className="text-[12px] text-[#6f6f79] uppercase font-bold">CPM</p>
-                            <h1 className="text-2xl font-bold">{data.cpm}</h1>
-                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-1 rounded-full"></div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">CPM (Characters per minute)</p>
+                            <h1 className="text-xl font-bold">{data.cpm}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
                         </div>
-                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-3 px-5 relative">
-                            <p className="text-[12px] text-[#6f6f79] uppercase font-bold">Accuracy</p>
-                            <h1 className="text-2xl font-bold">{data.accuracy}%</h1>
-                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-1 rounded-full"></div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">KPM (Keystrokes per minute)</p>
+                            <h1 className="text-xl font-bold">{data.kpm}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
                         </div>
-                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-3 px-5 relative">
-                            <p className="text-[12px] text-[#6f6f79] uppercase font-bold">Time</p>
-                            <h1 className="text-2xl font-bold">{data.timeSeconds}s</h1>
-                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-1 rounded-full"></div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">Accuracy</p>
+                            <h1 className="text-xl font-bold">{data.accuracy}%</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
+                        </div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">Time Taken</p>
+                            <h1 className="text-xl font-bold">{secondsToTime(data.timeSeconds)}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
+                        </div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">Currect Characters</p>
+                            <h1 className="text-xl font-bold">{data.correctChars}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
+                        </div>
+                        <div className="w-full border border-[#1d1d22] bg-[#222227] rounded-md py-2 px-3 relative">
+                            <p className="text-[11px] text-[#6f6f79] capitalize font-semibold">Incorrect Characters</p>
+                            <h1 className="text-xl font-bold">{data.incorrectChars}</h1>
+                            <div className="mt-1 bg-linear-to-br from-indigo-600 to-orange-600 w-full h-0.75 rounded-full"></div>
                         </div>
                     </div>
 
-                    <div className="w-full flex items-center justify-center my-5 gap-5">
-                        <button className="w-full py-2.5 bg-linear-to-br from-red-500 to-red-600 rounded-sm text-white text-sm font-semibold cursor-pointer" onClick={handleRepeat}>Repeat</button>
-                        <button className="w-full py-2.5 bg-linear-to-br from-indigo-600 to-orange-600 rounded-sm text-white text-sm font-semibold cursor-pointer" onClick={closeModal}>Next</button>
+                    <div className="w-full flex items-center justify-end my-5 gap-3">
+                        <button className="px-5 py-2 bg-linear-to-br from-red-500 to-red-600 rounded-full text-white text-sm font-semibold cursor-pointer" onClick={handleRepeat}>Repeat</button>
+                        <button className="px-5 py-2 bg-linear-to-br from-indigo-600 to-orange-600 rounded-full text-white text-sm font-semibold cursor-pointer" onClick={closeModal}>Next</button>
                     </div>
                 </div>
             </div>
