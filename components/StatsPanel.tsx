@@ -7,7 +7,7 @@ import { HiHashtag, HiOutlineMenuAlt3 } from "react-icons/hi";
 import { MdClose, MdOutlineSettings } from "react-icons/md";
 import { RiAlignLeft, RiMenu3Line, RiTimerLine } from "react-icons/ri";
 
-export default function StatsPanel() {
+export default function StatsPanel({ hideStats }: { hideStats: boolean }) {
 
     const [isOpenMenu, setIsOpenMenu] = useState(false);
     const { setInitialSetting, initialSetting } = useTyping();
@@ -31,7 +31,7 @@ export default function StatsPanel() {
 
     return (
         <>
-            <div className="w-full h-16 border-b-2 fixed top-0 border-b-[#1B1B1F] flex items-center justify-between">
+            <div className={`w-full h-16 border-b-2 fixed top-0 border-b-[#1B1B1F] flex items-center justify-between ${hideStats ? 'invisible' : 'visible'}`}>
                 <div className="container mx-auto">
                     <div className="w-full flex items-center justify-between px-3">
                         <FaKeyboard className="text-orange-400" size={25} />

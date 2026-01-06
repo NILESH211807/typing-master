@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useRef } from "react";
+import React, { Activity, useCallback, useRef } from "react";
 import { useEffect, useState } from "react";
 import Timer from "./Timer";
 import { generateWords, getCursorLineIndex, getLineCount } from "@/utils/generate";
@@ -9,8 +9,24 @@ import Loader from "./Loader";
 import { LuCircleDot } from "react-icons/lu";
 import { useTyping } from "@/provider/TypingProvider";
 import StatsPanel from "./StatsPanel";
+import ResultModal from "./ResultModal";
+import { initTypingSound, playTypingSound } from "@/utils/sound";
+import debounce from "@/utils/dbounce";
 
-export default function TextDisplay() {
+export type ResultDataType = {
+    startTime: number,
+    endTime: number,
+    totalKeystrokes: number,
+    typedChars: number,
+    correctChars: number,
+    incorrectChars: number,
+    backspaces: number,
+    words: {
+        correct: number,
+    }
+}
+
+export default function TextDisplay({ setHideStats }: { setHideStats: React.Dispatch<React.SetStateAction<boolean>> }) {
     const [words, setWords] = useState<string[]>(() => generateWords(30));
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [activeWordIndex, setActiveWordIndex] = useState<number>(0);
@@ -23,21 +39,56 @@ export default function TextDisplay() {
     const [wrongKeyCount, setWrongKeyCount] = useState(0);
     const lineLockRef = useRef(false);
     const [loading, setLoading] = useState(true);
-    const { initialSetting } = useTyping();
+    const { initialSetting, setInitialSetting, defaultResult } = useTyping();
+    const [resultData, setResultData] = useState<ResultDataType>(defaultResult);
+    const [showResult, setShowResult] = useState(false);
+
+    // restart
+    const reset = (type = "next") => {
+        if (type === "restart") {
+            setWords(generateWords(30));
+        }
+        setActiveWordIndex(0);
+        setActiveCharIndex(0);
+        setIsTyping(false);
+        setInputChar("");
+        setIsIncorrect(false);
+        setWrongKeyCount(0);
+        setResultData(defaultResult);
+        setShowResult(false);
+    }
+
+    const checkIsTypingRef = useRef(
+        debounce(() => {
+            setHideStats(false);
+        }, 5000)
+    );
+
+    useEffect(() => {
+        return () => {
+            checkIsTypingRef.current.cancel();
+        }
+    }, [])
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         event.preventDefault();
         if (!event.isTrusted) return;
         const key = event.key;
 
+        setResultData(prev => ({
+            ...prev,
+            startTime: prev.startTime || Date.now(),
+        }))
+
         // block extra keys 
         if (key.length > 1 && key !== "Backspace") return;
 
         setIsTyping(true);
+        setHideStats(true);
+        checkIsTypingRef.current();
 
         // add more words 
         if (key === " ") {
-
             requestAnimationFrame(() => {
                 if (!containerRef.current) return;
                 const cursorLine = getCursorLineIndex(activeWordIndex, containerRef);
@@ -71,17 +122,29 @@ export default function TextDisplay() {
             activeCharIndex === words[activeWordIndex].length) {
             return;
         }
+
         const currentWord = words[activeWordIndex];
 
         if (key === " " && activeCharIndex === currentWord.length) {
             event.preventDefault();
             setActiveWordIndex(prev => prev + 1);
             setActiveCharIndex(0);
+            setResultData(prev => ({
+                ...prev,
+                words: {
+                    correct: prev.words.correct + 1,
+                }
+            }))
             return;
         }
 
         if (key === "Backspace" && activeCharIndex > 0) {
             setActiveCharIndex(prev => prev - 1);
+            setResultData(prev => ({
+                ...prev,
+                totalKeystrokes: prev.totalKeystrokes + 1,
+                backspaces: prev.backspaces + 1,
+            }))
             return;
         }
 
@@ -90,18 +153,26 @@ export default function TextDisplay() {
         if (key === " ") return;
 
         setActiveCharIndex(prev => {
-            if (currentWord[prev] === key) {
+            const isCorrect = currentWord[prev] === key;
+
+            if (isCorrect) {
                 setIsIncorrect(false);
                 setWrongKeyCount(0);
-                return prev + 1;
+            } else {
+                setIsIncorrect(true);
+                setWrongKeyCount(prev => prev + 1);
             }
-            setIsIncorrect(true);
-            setWrongKeyCount(prev => prev + 1);
-            return prev;
+            setResultData(prev => ({
+                ...prev,
+                totalKeystrokes: prev.totalKeystrokes + 1,
+                typedChars: prev.typedChars + 1,
+                correctChars: isCorrect ? prev.correctChars + 1 : prev.correctChars,
+                incorrectChars: !isCorrect ? prev.incorrectChars + 1 : prev.incorrectChars,
+            }));
+            return isCorrect ? prev + 1 : prev;
         });
-
         setInputChar(key);
-    }, [activeCharIndex, activeWordIndex, words]);
+    }, [activeCharIndex, activeWordIndex, words, setHideStats, checkIsTypingRef]);
 
     useEffect(() => {
         document.addEventListener("keydown", handleKeyDown);
@@ -109,7 +180,6 @@ export default function TextDisplay() {
             document.removeEventListener("keydown", handleKeyDown);
         };
     }, [handleKeyDown]);
-
 
     useEffect(() => {
         const char = document.querySelector(
@@ -148,6 +218,18 @@ export default function TextDisplay() {
         incorrectRef.current.style.setProperty("--y", `${y}px`);
     }, [isIncorrect, wrongKeyCount, activeCharIndex, activeWordIndex]);
 
+    // useEffect(() => {
+    //     const unlockAudio = () => {
+    //         initTypingSound();
+    //         window.removeEventListener("keydown", unlockAudio);
+    //     };
+
+    //     window.addEventListener("keydown", unlockAudio);
+
+    //     return () => window.removeEventListener("keydown", unlockAudio);
+    // }, []);
+
+    // handle result 
     useEffect(() => {
         const t = setTimeout(() => {
             setLoading(false);
@@ -156,7 +238,7 @@ export default function TextDisplay() {
         return () => {
             clearTimeout(t);
         };
-    }, [loading])
+    }, [loading]);
 
     return (
         <>
@@ -168,6 +250,12 @@ export default function TextDisplay() {
                 )
             }
 
+            <Activity mode={`${showResult ? "visible" : "hidden"}`}>
+                <ResultModal
+                    resultData={resultData}
+                    reset={reset}
+                />
+            </Activity>
             <div className="container mx-auto mt-28 select-none">
                 <div className="words max-[650]:px-4 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
                     <div className="w-full flex items-center justify-between mb-5">
@@ -178,7 +266,13 @@ export default function TextDisplay() {
                             <h3 className=" text-orange-400">{activeWordIndex}</h3>
                         </div>
 
-                        {initialSetting.mode === "time" && (<Timer isTyping={isTyping} />)}
+                        {initialSetting.mode === "time" && (<Timer
+                            key={initialSetting.duration}
+                            duration={initialSetting.duration}
+                            isTyping={isTyping}
+                            setShowResult={setShowResult}
+                            setResultData={setResultData}
+                        />)}
                     </div>
                     <div
                         ref={containerRef}
