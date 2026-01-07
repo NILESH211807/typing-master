@@ -57,7 +57,7 @@ export default function StatsPanel({
                     <div className="w-full h-full fixed top-0 left-0 bg-[#0c0c0e5b] backdrop-blur-xs z-40"></div>
                 )
             }
-            <div className={`w-full h-screen max-w-md bg-[#222227] fixed right-0 top-0 z-50 transition-transform duration-300 ease-in-out ${isOpenMenu ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`w-full min-h-screen max-w-md bg-[#222227] fixed right-0 top-0 z-50 transition-transform duration-300 ease-in-out ${isOpenMenu ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex items-center justify-between px-5 py-2 border-b border-[#1B1B1F]">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <MdOutlineSettings className="w-6 h-6 text-orange-500" />
