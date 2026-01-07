@@ -38,7 +38,6 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     const incorrectRef = useRef<HTMLDivElement>(null);
     const [wrongKeyCount, setWrongKeyCount] = useState(0);
     const lineLockRef = useRef(false);
-    const [loading, setLoading] = useState(true);
     const { initialSetting, defaultResult } = useTyping();
     const [resultData, setResultData] = useState<ResultDataType>(defaultResult);
     const [showResult, setShowResult] = useState(false);
@@ -77,7 +76,6 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     useEffect(() => {
         if (!inputRef.current) return;
         inputRef.current.focus();
-
         return () => {
             checkIsTypingRef.current.cancel();
         }
@@ -85,6 +83,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
 
     // process input typing
     const processTyping = useCallback((char: string) => {
+        if (showResult) return;
         if (char.length > 1 && char !== "Backspace") return;
 
         // type start timer
@@ -123,17 +122,17 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             return;
         }
 
-        if (char === "Backspace" && activeCharIndex > 0) {
-            setActiveCharIndex(prev => prev - 1);
-            setResultData(prev => ({
-                ...prev,
-                totalKeystrokes: prev.totalKeystrokes + 1,
-                backspaces: prev.backspaces + 1,
-            }))
-            return;
-        }
+        // if (char === "Backspace" && activeCharIndex > 0) {
+        //     setActiveCharIndex(prev => prev - 1);
+        //     setResultData(prev => ({
+        //         ...prev,
+        //         totalKeystrokes: prev.totalKeystrokes + 1,
+        //         backspaces: prev.backspaces + 1,
+        //     }))
+        //     return;
+        // }
 
-        if (char === "Backspace" && activeCharIndex === 0) return;
+        // if (char === "Backspace" && activeCharIndex === 0) return;
         if (char === " ") return;
 
         setActiveCharIndex(prev => {
@@ -156,7 +155,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         });
         setInputChar(char);
 
-    }, [setHideStats, activeWordIndex, activeCharIndex, words]);
+    }, [setHideStats, activeWordIndex, activeCharIndex, words, showResult]);
 
     // handle input change 
     const handleInputChange = useCallback(
@@ -169,6 +168,43 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             processTyping(character);
             event.target.value = '';
         }, [showResult, processTyping]);
+
+    // handleBackspace
+    const handleBackspace = useCallback(() => {
+        if (activeCharIndex > 0) {
+            setActiveCharIndex(prev => prev - 1);
+            setResultData(prev => ({
+                ...prev,
+                totalKeystrokes: prev.totalKeystrokes + 1,
+                backspaces: prev.backspaces + 1,
+            }))
+            return;
+        }
+
+        if (activeCharIndex === 0) return;
+
+        setResultData(prev => ({
+            ...prev,
+            totalKeystrokes: prev.totalKeystrokes + 1,
+            backspaces: prev.backspaces + 1,
+        }));
+    }, [activeCharIndex]);
+
+    // handleKeyDown 
+    const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (showResult) return;
+        const key = event.key;
+
+        const blockedKeys = ["Shift", "Alt", "Control", "Meta"];
+
+        if (blockedKeys.includes(key)) return;
+
+        if (key === 'Backspace') {
+            handleBackspace();
+            return;
+        }
+
+    }, [handleBackspace, showResult]);
 
 
     // move cursor
@@ -211,6 +247,23 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             incorrectRef.current.style.setProperty("--y", `${y}px`);
         }, [isIncorrect, wrongKeyCount, activeCharIndex, activeWordIndex]);
 
+
+    useEffect(
+        () => {
+            const handleClickOutside = (e: MouseEvent) => {
+                if (
+                    containerRef.current &&
+                    !containerRef.current.contains(e.target as Node)
+                ) {
+                    inputRef.current?.blur();
+                }
+            };
+
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+
+
     // useEffect(
     //     () => {
     //         const t = setTimeout(
@@ -235,7 +288,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                     resultData={resultData}
                     reset={reset}
                 />)}
-            <div onClick={handleOnClickFocusInput} className="container mx-auto mt-28 select-none">
+            <div className="container mx-auto mt-28 select-none">
                 <div className="words max-[650]:px-6 w-full max-w-6xl mx-auto flex justify-center flex-col mt-20">
                     <div className="w-full flex items-center justify-between mb-5">
                         <div className="flex text-3xl max-[650px]:text-[25px] items-center justify-center gap-3">
@@ -263,10 +316,12 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
                         spellCheck={false}
                         inputMode="text"
                         onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
                         onPaste={(e) => e.preventDefault()}
-                        onBlur={() => inputRef.current?.focus()}
+                    // onBlur={() => inputRef.current?.focus()}
                     />
                     <div
+                        onClick={handleOnClickFocusInput}
                         ref={containerRef}
                         className="w-full text-[33px] max-[650px]:text-[22px] mt-5 select-none inline-flex flex-wrap relative"
                     >

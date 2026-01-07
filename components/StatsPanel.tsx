@@ -2,10 +2,9 @@
 import { useTyping } from "@/provider/TypingProvider";
 import { useState } from "react";
 import { FaKeyboard } from "react-icons/fa";
-import { FiClock, FiType } from "react-icons/fi";
-import { HiHashtag, HiOutlineMenuAlt3 } from "react-icons/hi";
+import { FiClock } from "react-icons/fi";
+import { HiOutlineMenuAlt3 } from "react-icons/hi";
 import { MdClose, MdOutlineSettings } from "react-icons/md";
-import { RiAlignLeft, RiMenu3Line, RiTimerLine } from "react-icons/ri";
 
 export default function StatsPanel({
     hideStats,
@@ -25,6 +24,10 @@ export default function StatsPanel({
         setSettings(newSettings);
     };
 
+    const openMenu = () => {
+        setIsOpenMenu(true);
+    };
+
     const onClose = () => {
         setIsOpenMenu(false);
     };
@@ -42,7 +45,7 @@ export default function StatsPanel({
                 <div className="container mx-auto">
                     <div className="w-full flex items-center justify-between px-3">
                         <FaKeyboard className="text-orange-400" size={25} />
-                        <button onClick={() => setIsOpenMenu(true)} type="button" className="cursor-pointer transition-all ease-in-out hover:bg-[#1B1B1F]  text-2xl w-10 h-10 rounded-full flex items-center justify-center">
+                        <button onClick={openMenu} type="button" className="cursor-pointer transition-all ease-in-out hover:bg-[#1B1B1F]  text-2xl w-10 h-10 rounded-full flex items-center justify-center">
                             <HiOutlineMenuAlt3 />
                         </button>
                     </div>
