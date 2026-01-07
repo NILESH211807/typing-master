@@ -11,6 +11,7 @@ import { useTyping } from "@/provider/TypingProvider";
 import ResultModal from "./ResultModal";
 import { initTypingSound, playTypingSound } from "@/utils/sound";
 import debounce from "@/utils/dbounce";
+import { useTypingSound } from "@/hooks/useTypingSound";
 
 export type ResultDataType = {
     startTime: number,
@@ -24,6 +25,12 @@ export type ResultDataType = {
         correct: number,
     }
 }
+
+const SOUND_URLS = {
+    correct: "https://ik.imagekit.io/9kvz9l4o8/sound/correct.mp3",
+    wrong: "https://ik.imagekit.io/9kvz9l4o8/sound/wrong.mp3"
+};
+
 
 export default function TextDisplay({ setHideStats }: { setHideStats: React.Dispatch<React.SetStateAction<boolean>> }) {
     const [words, setWords] = useState<string[]>(() => generateWords(30));
@@ -43,6 +50,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
     const [showResult, setShowResult] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [timerResetKey, setTimerResetKey] = useState(0);
+    const { playSound } = useTypingSound();
 
     // reset
     const reset = (type = "next") => {
@@ -113,6 +121,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             setActiveWordIndex(prev => prev + 1);
             setWordCount(prev => prev + 1);
             setActiveCharIndex(0);
+            playSound(SOUND_URLS.correct);
             setResultData(prev => ({
                 ...prev,
                 words: {
@@ -140,9 +149,11 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
             if (isCorrect) {
                 setIsIncorrect(false);
                 setWrongKeyCount(0);
+                playSound(SOUND_URLS.correct, 0.9);
             } else {
                 setIsIncorrect(true);
                 setWrongKeyCount(prev => prev + 1);
+                playSound(SOUND_URLS.wrong);
             }
             setResultData(prev => ({
                 ...prev,
@@ -155,7 +166,7 @@ export default function TextDisplay({ setHideStats }: { setHideStats: React.Disp
         });
         setInputChar(char);
 
-    }, [setHideStats, activeWordIndex, activeCharIndex, words, showResult]);
+    }, [setHideStats, activeWordIndex, activeCharIndex, words, showResult, playSound]);
 
     // handle input change 
     const handleInputChange = useCallback(
